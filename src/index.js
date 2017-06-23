@@ -5,9 +5,8 @@ var nanomorph = require('nanomorph')
 var createStore = require('redux').createStore
 var reducer = require('./store/reducer')
 var homeView = require('./views/home')
-var postView = require('./views/post')
-var newPostView = require('./views/new-post')
-var getAllPosts = require('./store/actions').getAllPosts
+var signinView = require('./views/signin')
+var signupView = require('./views/signup')
 
 css('tachyons')
 
@@ -17,13 +16,12 @@ store.subscribe(render)
 
 router.setStore(store)
 router.addRoute('/', homeView)
-router.addRoute('/new', newPostView)
-router.addRoute('/:post', postView)
+router.addRoute('/signin', signinView)
+router.addRoute('/signup', signupView)
 router.notFound(notFoundView)
 router.setRoot('/')
 router.start()
 
-getAllPosts(store)
 function notFoundView (params, state) {
   return html`<main>
     <h1>ups! nothing here :(</h1>

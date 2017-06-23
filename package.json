@@ -34,6 +34,7 @@
   "devDependencies": {
     "envify": "^4.0.0",
     "memdb": "^1.3.1",
+    "secure-password": "^2.0.0",
     "snazzy": "^7.0.0",
     "standard": "^10.0.2",
     "tap-summary": "^3.0.2",
