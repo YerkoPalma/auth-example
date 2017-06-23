@@ -1,13 +1,11 @@
 function reducer (state, action) {
   state = state || {}
   switch (action.type) {
-    case 'SET_POSTS':
-      state.posts = action.data
+    case 'SET_CURRENT_USER':
+      state.currentUser = action.data
       return state
-    case 'ADD_POST':
-      var posts = state.posts || []
-      posts.push(action.data)
-      state.posts = posts
+    case 'DELETE_CURRENT_USER':
+      state.currentUser = null
       return state
     default:
       return state

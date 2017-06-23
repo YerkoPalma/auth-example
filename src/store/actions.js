@@ -1,27 +1,43 @@
 var http = require('http')
 var cookie = require('cookie-cutter')
 
-function getAllPosts (store) {
-  var posts = []
-  // GET /post
-  makeRequest('GET', '/api/v1/post', null, function (body, res) {
-    // if ok
-    posts = body.data
-    store.dispatch({ type: 'SET_POSTS', data: posts })
+function getCurrentUser (token, store, cb) {
+  makeRequest('GET', '/api/v1/user/' + token, null, function (err, body, res) {
+    if (err) return cb(err)
+    store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
+    // no need to pass the user
+    cb()
   })
 }
-function addPost (store, post, cb) {
-  // POST /post
-  makeRequest('POST', '/api/v1/post', post, function (body, res) {
-    // if ok
-    store.dispatch({ type: 'ADD_POST', data: body.data })
+function signIn (mail, pass, store, cb) {
+  var userData = {
+    mail: mail,
+    pass: pass
+  }
+  makeRequest('POST', '/api/v1/user/login', userData, function (err, body, res) {
+    if (err) return cb(err)
+    store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
+    cb()
+  })
+}
+function signUp (name, mail, pass, passConfirm, store, cb) {
+  if (pass !== passConfirm) return cb(new Error('Password mismatch'))
+  var userData = {
+    name: name,
+    mail: mail,
+    pass: pass
+  }
+  makeRequest('POST', '/api/v1/user', userData, function (err, body, res) {
+    if (err) return cb(err)
+    store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
     cb()
   })
 }
 
 module.exports = {
-  getAllPosts: getAllPosts,
-  addPost: addPost
+  getCurrentUser: getCurrentUser,
+  signIn: signIn,
+  signUp: signUp
 }
 
 function makeRequest (method, route, data, cb) {
@@ -36,18 +52,19 @@ function makeRequest (method, route, data, cb) {
       }
     }
     res.on('error', function (err) {
-      // t.error(err)
-      throw err
+      cb(err)
     })
     var body = []
     res.on('data', function (chunk) {
       body.push(chunk)
     })
-    res.on('end', function () { cb(JSON.parse(body.toString()), res) })
+    res.on('end', function () { 
+      var bodyString = body.toString()
+      cb(null, bodyString ? JSON.parse(bodyString) : '{}', res)
+    })
   })
   req.on('error', function (err) {
-    // t.error(err)
-    throw err
+    cb(err)
   })
   if (data) {
     req.write(JSON.stringify(data))
