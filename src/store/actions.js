@@ -33,11 +33,20 @@ function signUp (name, mail, pass, passConfirm, store, cb) {
     cb()
   })
 }
+function signOut (store, cb) {
+  var token = store.getState().currentUser.token
+  makeRequest('POST', '/api/v1/user/logout', token, function (err, body, res) {
+    if (err) return cb(err)
+    store.dispatch({ type: 'DELETE_CURRENT_USER' })
+    cb()
+  })
+}
 
 module.exports = {
   getCurrentUser: getCurrentUser,
   signIn: signIn,
-  signUp: signUp
+  signUp: signUp,
+  signOut: signOut
 }
 
 function makeRequest (method, route, data, cb) {

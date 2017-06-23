@@ -12,17 +12,29 @@ var resource = Resource(app, stack)
 
 var db = process.env.ENV !== 'production'
         ? require('memdb')() : level(process.env.DB)
-var Post = Model(db, 'post')
+var User = Model(db, 'user')
 
 var opt = {
   version: 1,
-  path: 'post'
+  path: 'user',
+  overwrite: [
+    {
+      // POST create (signup)
+      method: 'POST',
+      route: '/api/v' + (this.version || 1) + '/user',
+      handler: signup
+    }
+  ]
 }
 
-resource(Post, opt)
+resource(User, opt)
 
 app.route('default', function (req, res, ctx) {
   ctx.send(404, { message: 'not found' })
 })
+
+function signup () {
+  
+}
 
 module.exports = app
