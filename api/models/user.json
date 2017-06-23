@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "number"
+    },
+    "name": {
+      "type": "string"
+    },
+    "mail": {
+      "type": "string",
+      "format": "email"
+    },
+    "password": {
+      "type": "object"
+    },
+    "token": {
+      "type": "string"
+    }
+  },
+  "required": ["mail", "password"],
+  "additionalProperties": false
+}
