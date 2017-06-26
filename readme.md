@@ -11,6 +11,10 @@ and signup view. To achieve this I've used the [secure-password][secure-password
 package, and defined some middlewares to use with cookies and headers for 
 session management.
 
+## TODO
+
+- [ ] Use sublevel for indexing and searchs with level-search
+
 ## License
 [MIT](/license)
 
