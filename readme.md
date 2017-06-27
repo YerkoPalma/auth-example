@@ -13,7 +13,9 @@ session management.
 
 ## TODO
 
-- [ ] Use sublevel for indexing and searchs with level-search
+- [x] Use sublevel for indexing and searchs with level-search
+- [ ] Better handle errors
+- [ ] Tests
 
 ## License
 [MIT](/license)
