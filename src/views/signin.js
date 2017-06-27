@@ -1,4 +1,5 @@
 var html = require('bel')
+var signIn = require('../store/actions').signIn
 
 function signinView (params, store) {
   return html`<main class="helvetica pa4 black-80">
@@ -26,7 +27,14 @@ function signinView (params, store) {
 
   function signin (e) {
     e.preventDefault()
-    window.RouterInstance.goToPath('/')
+    // get the user data
+    var mail = document.querySelector('#email-address').value()
+    var password = document.querySelector('#password').value()
+
+    signIn(mail, password, store, function (err) {
+      if (err) throw err
+      window.RouterInstance.goToPath('/')
+    })
   }
 }
 module.exports = signinView

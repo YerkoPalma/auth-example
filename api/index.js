@@ -36,19 +36,25 @@ var opt = {
   path: 'user',
   overwrite: [
     {
+      // GET currentUser
+      method: 'GET',
+      route: '/api/v' + (this.version || 1) + '/user/:id',
+      handler: getCurrentUser
+    },
+    {
       // POST create (signup)
       method: 'POST',
       route: '/api/v' + (this.version || 1) + '/user',
       handler: signup
     },
     {
-      // POST login (signup)
+      // POST login (signin)
       method: 'POST',
       route: '/api/v' + (this.version || 1) + '/login',
       handler: signin
     },
     {
-      // POST login (signup)
+      // POST logout (signout)
       method: 'POST',
       route: '/api/v' + (this.version || 1) + '/logout',
       handler: signout
@@ -61,6 +67,22 @@ resource(User, opt)
 app.route('default', function (req, res, ctx) {
   ctx.send(404, { message: 'not found' })
 })
+
+function getCurrentUser (req, res, ctx) {
+  var token = ctx.params.id
+  var user = null
+  index.createSearchStream(['token', token])
+    .on('data', function (dbData) {
+      user = dbData
+    })
+    .on('end', function () {
+      if (user) {
+        ctx.send(200, user)
+      } else {
+        ctx.send(400, { message: 'Not found' })
+      }
+    })
+}
 
 function signup (req, res, ctx) {
   var user = null

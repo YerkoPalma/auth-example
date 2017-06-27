@@ -1,10 +1,15 @@
 var html = require('bel')
+var signUp = require('../store/actions').signUp
 
 function signupView (params, store) {
   return html`<main class="helvetica pa4 black-80">
   <form class="measure center" onsubmit="${signup}">
     <fieldset id="sign_up" class="ba b--transparent ph0 mh0">
       <legend class="f4 fw6 ph0 mh0">Sign Up</legend>
+      <div class="mt3">
+        <label class="db fw6 lh-copy f6" for="name">Name</label>
+        <input class="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100" type="text" name="name"  id="name">
+      </div>
       <div class="mt3">
         <label class="db fw6 lh-copy f6" for="email-address">Email</label>
         <input class="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100" type="email" name="email-address"  id="email-address">
@@ -30,7 +35,15 @@ function signupView (params, store) {
 
   function signup (e) {
     e.preventDefault()
-    window.RouterInstance.goToPath('/')
+    var name = document.querySelector('#name').value
+    var mail = document.querySelector('#email-address').value
+    var password = document.querySelector('#password').value
+    var repeatedPassword = document.querySelector('#repeatedpassword').value
+
+    signUp(name, mail, password, repeatedPassword, store, function (err) {
+      if (err) throw err
+      window.RouterInstance.goToPath('/')
+    })
   }
 }
 module.exports = signupView

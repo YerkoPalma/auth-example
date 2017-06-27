@@ -1,13 +1,33 @@
 var html = require('bel')
+var cookie = require('cookie-cutter')
+var getCurrentUser = require('../store/actions').getCurrentUser
+var signOut = require('../store/actions').signOut
 
 function homeView (params, store) {
+  if (!store.getState().currentUser) {
+    if (cookie.get('token')) {
+      getCurrentUser(cookie.get('token'), store, function (err) {
+        if (err) throw err
+        console.log('got user!')
+      })
+    } else {
+      window.RouterInstance.goToPath('/signin')
+    }
+  }
   return html`<article class="helvetica mw5 center bg-white br3 pa3 pa4-ns mv3 ba b--black-10">
   <div class="tc">
     <img src="http://tachyons.io/img/avatar_1.jpg" class="br-100 h4 w4 dib ba b--black-05 pa2" title="Photo of a kitty staring at you">
-    <h1 class="f3 mb2">Mimi W.</h1>
+    <h1 class="f3 mb2">${store.getState().currentUser.name}</h1>
     <h2 class="f5 fw4 gray mt0">CCO (Chief Cat Officer)</h2>
-    <a class="link pointer" data-route="/signin">sign out</a>
+    <a class="link pointer" onclick="${signout}" >sign out</a>
   </div>
 </article>`
+  function signout(e) {
+    e.preventDefault()
+    signOut(store, function (err) {
+      if (err) throw err
+      window.RouterInstance.goToPath('/signin')
+    })
+  }
 }
 module.exports = homeView
