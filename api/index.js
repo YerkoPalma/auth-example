@@ -1,5 +1,6 @@
 var merry = require('merry')
 var level = require('level')
+var dump = require('level-dump')
 var sub = require('level-sublevel')
 var search = require('level-search')
 var securePassword = require('secure-password')
@@ -7,7 +8,6 @@ var Resource = require('./lib/resource')
 var Model = require('./lib/factory')
 var Nanostack = require('nanostack')
 var pwd = securePassword()
-
 var app = merry()
 var stack = Nanostack()
 // push to middleware
@@ -27,7 +27,7 @@ stack.push(function timeElapsed (ctx, next) {
 var resource = Resource(app, stack)
 
 var db = process.env.ENV !== 'production'
-        ? sub(require('memdb')()) : sub(level(process.env.DB))
+        ? sub(require('memdb')({ valueEncoding: 'json' })) : sub(level(process.env.DB, { valueEncoding: 'json' }))
 var index = search(db, 'search')
 var User = Model(db, 'user')
 
@@ -71,9 +71,13 @@ app.route('default', function (req, res, ctx) {
 function getCurrentUser (req, res, ctx) {
   var token = ctx.params.id
   var user = null
+  dump.allEntries(db)
   index.createSearchStream(['token', token])
     .on('data', function (dbData) {
       user = dbData
+    })
+    .on('error', function (err) {
+      ctx.send(400, { message: 'Not found' })
     })
     .on('end', function () {
       if (user) {
@@ -100,6 +104,7 @@ function signup (req, res, ctx) {
       // generate a token from the email
       var token = Buffer.from(user.mail).toString('base64')
       user.token = token
+      user.id = User.model.generateId()
       // data is now ready, so
       // save it to the DB
       db.put(user.id, user, function (err) {
@@ -116,6 +121,7 @@ function signin (req, res, ctx) {
     if (err) throw err
     // get a buffer from the password
     var passBuffer = Buffer.from(data.pass)
+    console.log('signin')
     // find the user fomr the Db with the given mail
     index.createSearchStream(['mail', data.mail])
       .on('data', function (dbData) {
@@ -135,21 +141,21 @@ function signin (req, res, ctx) {
 }
 
 function signout (req, res, ctx) {
+  var user = null
   User.getBodyData(req, function (err, data) {
     if (err) throw err
-    console.log('about to start searching for', data)
+    console.log('signout')
     index.createSearchStream(['token', data])
       .on('error', function (err) {
         throw err
       })
       .on('data', function (dbData) {
-        console.log('user found!')
-        dbData.token = null
-        db.batch()
-          .put(dbData.id, dbData)
-          .write(function () {
-            ctx.send(200, { message: 'signed out' })
-          })
+        user = dbData.value
+        user.token = ''
+        db.batch([{ type: 'put', key: user.id, value: user }], function (err) {
+          if (err) throw err
+          ctx.send(200, { message: 'signed out' })
+        })
       })
   })
 }

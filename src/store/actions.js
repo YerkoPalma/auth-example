@@ -29,7 +29,6 @@ function signUp (name, mail, pass, passConfirm, store, cb) {
   }
   makeRequest('POST', '/api/v1/user', userData, function (err, body, res) {
     if (err) return cb(err)
-    console.log('signup returned', body)
     store.dispatch({ type: 'SET_CURRENT_USER', data: body })
     cb()
   })

@@ -28,8 +28,8 @@ function signinView (params, store) {
   function signin (e) {
     e.preventDefault()
     // get the user data
-    var mail = document.querySelector('#email-address').value()
-    var password = document.querySelector('#password').value()
+    var mail = document.querySelector('#email-address').value
+    var password = document.querySelector('#password').value
 
     signIn(mail, password, store, function (err) {
       if (err) throw err
