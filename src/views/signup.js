@@ -42,6 +42,7 @@ function signupView (params, store) {
 
     signUp(name, mail, password, repeatedPassword, store, function (err) {
       if (err) throw err
+      console.log('state user', store.getState().currentUser)
       window.RouterInstance.goToPath('/')
     })
   }

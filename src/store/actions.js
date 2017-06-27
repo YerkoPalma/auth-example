@@ -14,7 +14,7 @@ function signIn (mail, pass, store, cb) {
     mail: mail,
     pass: pass
   }
-  makeRequest('POST', '/api/v1/user/login', userData, function (err, body, res) {
+  makeRequest('POST', '/api/v1/login', userData, function (err, body, res) {
     if (err) return cb(err)
     store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
     cb()
@@ -29,13 +29,14 @@ function signUp (name, mail, pass, passConfirm, store, cb) {
   }
   makeRequest('POST', '/api/v1/user', userData, function (err, body, res) {
     if (err) return cb(err)
-    store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
+    console.log('signup returned', body)
+    store.dispatch({ type: 'SET_CURRENT_USER', data: body })
     cb()
   })
 }
 function signOut (store, cb) {
   var token = store.getState().currentUser.token
-  makeRequest('POST', '/api/v1/user/logout', token, function (err, body, res) {
+  makeRequest('POST', '/api/v1/logout', token, function (err, body, res) {
     if (err) return cb(err)
     store.dispatch({ type: 'DELETE_CURRENT_USER' })
     cb()

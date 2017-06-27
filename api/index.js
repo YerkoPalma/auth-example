@@ -100,11 +100,12 @@ function signup (req, res, ctx) {
       // generate a token from the email
       var token = Buffer.from(user.mail).toString('base64')
       user.token = token
-      // data is now ready, so make the request
-      req.write(JSON.stringify(user), function () {
-        User.post(req, Object.assign({ valueEncoding: 'json' }, ctx.params), function (err, data) {
-          if (err) throw err
-        })
+      // data is now ready, so
+      // save it to the DB
+      db.put(user.id, user, function (err) {
+        if (err) throw err
+        // then send the user
+        ctx.send(200, user, { 'x-session-token': user.token })
       })
     })
   })
@@ -136,8 +137,13 @@ function signin (req, res, ctx) {
 function signout (req, res, ctx) {
   User.getBodyData(req, function (err, data) {
     if (err) throw err
-    index.createSearchStream(['token', data.token])
+    console.log('about to start searching for', data)
+    index.createSearchStream(['token', data])
+      .on('error', function (err) {
+        throw err
+      })
       .on('data', function (dbData) {
+        console.log('user found!')
         dbData.token = null
         db.batch()
           .put(dbData.id, dbData)

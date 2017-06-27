@@ -31,6 +31,5 @@ function notFoundView (params, state) {
 function render (prev, curr) {
   var _prev = router.rootEl.lasttElementChild || router.rootEl.lastChild
   var _curr = router.currentRoute.onStart(store)
-  console.log('updated state to: ' + JSON.stringify(store.getState()))
   nanomorph(_prev, _curr)
 }
