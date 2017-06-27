@@ -71,13 +71,13 @@ app.route('default', function (req, res, ctx) {
 function getCurrentUser (req, res, ctx) {
   var token = ctx.params.id
   var user = null
-  dump.allEntries(db)
   index.createSearchStream(['token', token])
     .on('data', function (dbData) {
       user = dbData
     })
     .on('error', function (err) {
-      ctx.send(400, { message: 'Not found' })
+      if (user) ctx.send(500, err)
+      else ctx.send(400, { message: 'Not found' })
     })
     .on('end', function () {
       if (user) {
@@ -117,21 +117,34 @@ function signup (req, res, ctx) {
 }
 
 function signin (req, res, ctx) {
+  var user = null
   User.getBodyData(req, function (err, data) {
     if (err) throw err
     // get a buffer from the password
     var passBuffer = Buffer.from(data.pass)
-    console.log('signin')
     // find the user fomr the Db with the given mail
     index.createSearchStream(['mail', data.mail])
       .on('data', function (dbData) {
+        user = dbData.value
+        user.token = User.model.generateId()
         // verify the user password with the given password buffer
-        pwd.verify(passBuffer, dbData.password, function (err, result) {
+        pwd.verify(passBuffer, Buffer.from(user.pass.data), function (err, result) {
           if (err) throw err
+          // update token in db
           if (result === securePassword.VALID) {
-            ctx.send(200, dbData)
+            db.batch([{ type: 'put', key: user.id, value: user }], function (err) {
+              if (err) throw err
+              // don't send the pasword buffer to the client
+              if (user.pass) delete user.pass
+              ctx.send(200, user, { 'x-session-token': user.token })
+            })
           } else if (result === securePassword.VALID_NEEDS_REHASH) {
-            ctx.send(200, dbData)
+            db.batch([{ type: 'put', key: user.id, value: user }], function (err) {
+              if (err) throw err
+              // don't send the pasword buffer to the client
+              if (user.pass) delete user.pass
+              ctx.send(200, user, { 'x-session-token': user.token })
+            })
           } else {
             ctx.send(400, { message: 'password not ok' })
           }
@@ -144,7 +157,8 @@ function signout (req, res, ctx) {
   var user = null
   User.getBodyData(req, function (err, data) {
     if (err) throw err
-    console.log('signout')
+    dump.allEntries(db)
+    console.log(data)
     index.createSearchStream(['token', data])
       .on('error', function (err) {
         throw err

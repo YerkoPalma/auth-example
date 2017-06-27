@@ -16,7 +16,7 @@ function signIn (mail, pass, store, cb) {
   }
   makeRequest('POST', '/api/v1/login', userData, function (err, body, res) {
     if (err) return cb(err)
-    store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
+    store.dispatch({ type: 'SET_CURRENT_USER', data: body })
     cb()
   })
 }
