@@ -10,19 +10,6 @@ var Nanostack = require('nanostack')
 var pwd = securePassword()
 var app = merry()
 var stack = Nanostack()
-// push to middleware
-stack.push(function timeElapsed (ctx, next) {
-  // GET request need to be logged in
-  if (ctx.req.method === 'GET') {
-    
-  // PUT, DELETE need to be logged in and only for the logged user
-  // POST get special treatment
-  } else if (ctx.req.method === 'PUT' || ctx.req.method === 'DELETE') {
-    
-  } else {
-    next()
-  }
-})
 
 var resource = Resource(app, stack)
 
@@ -30,6 +17,34 @@ var db = process.env.ENV !== 'production'
         ? sub(require('memdb')({ valueEncoding: 'json' })) : sub(level(process.env.DB, { valueEncoding: 'json' }))
 var index = search(db, 'search')
 var User = Model(db, 'user')
+
+// push to middleware
+stack.push(function timeElapsed (ctx, next) {
+  // GET request need to be logged in
+  if (ctx.req.method === 'GET') {
+    if (ctx.req.headers['x-session-token']) next()
+    else next({ code: 403, message: 'Not allowed' })
+  // PUT, DELETE need to be logged in and only for the logged user
+  // POST get special treatment
+  } else if (ctx.req.method === 'PUT' || ctx.req.method === 'DELETE') {
+    var token = ctx.req.headers['x-session-token']
+    if (token) {
+      index.createSearchStream(['token', token])
+        .on('error', function (err) {
+          next({ code: 500, message: err.message })
+        })
+        .on('data', function (dbData) {
+          var user = dbData.value
+          if (user.id === ctx.params.id) next()
+          else next({ code: 403, message: 'Not allowed' })
+        })
+    } else {
+      next({ code: 403, message: 'Not allowed' })
+    }
+  } else {
+    next()
+  }
+})
 
 var opt = {
   version: 1,

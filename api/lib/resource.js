@@ -5,37 +5,38 @@ function resource (app, stack) {
     var prefix = '/api/v' + (opt.version || '1')
     var route = opt.path
     // index, create
-    app.route(['GET', 'POST'], path.join(prefix, route), handler)
+    app.route(['GET', 'POST'], path.join(prefix, route), handler())
     // show, update, delete
-    app.route(['GET', 'PUT', 'DELETE'], path.join(prefix, route, '/:id'), handler)
+    app.route(['GET', 'PUT', 'DELETE'], path.join(prefix, route, '/:id'), handler())
 
     if (opt.overwrite && Array.isArray(opt.overwrite)) {
       opt.overwrite.map(function (overwrite) {
-        app.route(overwrite.method, overwrite.route, overwrite.handler)
+        app.route(overwrite.method, overwrite.route, handler(overwrite.handler))
       })
     }
-
-    function handler (req, res, ctx) {
-      var dispatcher = dispatch(model)
-      if (stack && stack._middleware.length > 0) {
-        ctx.ondone = function (err) {
-          if (err) throw err
-        }
-        stack.walk(ctx, function (err, data) {
-          if (err) {
-            if (err.code && err.message) {
-              ctx.send(err.code, { message: err.message })
-            } else if (err instanceof Error) {
-              ctx.send(500, { message: err.message })
-            } else {
-              ctx.send(500, { message: 'Unknown error' })
-            }
-          } else {
-            dispatcher(req, res, ctx)
+    function handler (fn) {
+      return function (req, res, ctx) {
+        var dispatcher = fn || dispatch(model)
+        if (stack && stack._middleware.length > 0) {
+          ctx.ondone = function (err) {
+            if (err) throw err
           }
-        })
-      } else {
-        dispatcher(req, res, ctx)
+          stack.walk(ctx, function (err, data) {
+            if (err) {
+              if (err.code && err.message) {
+                ctx.send(err.code, { message: err.message })
+              } else if (err instanceof Error) {
+                ctx.send(500, { message: err.message })
+              } else {
+                ctx.send(500, { message: 'Unknown error' })
+              }
+            } else {
+              dispatcher(req, res, ctx)
+            }
+          })
+        } else {
+          dispatcher(req, res, ctx)
+        }
       }
     }
   }
