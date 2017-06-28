@@ -2,6 +2,7 @@ var tape = require('tape')
 var http = require('http')
 var api = require('../api')
 var server
+var id
 
 tape('setup', function (t) {
   var handler = api.start()
@@ -25,6 +26,7 @@ tape('authentication', function (t) {
       assert.ok(res.headers['x-session-token'])
       assert.ok(body.token)
       assert.ok(body.id)
+      id = body.id
       assert.notOk(body.pass)
       assert.equal(body.token, res.headers['x-session-token'])
     })
@@ -85,7 +87,7 @@ tape('session', function (t) {
   })
 
   t.test('user data can only be modifyied by itself', function (assert) {
-    assert.plan(3)
+    assert.plan(5)
     var user = {
       name: 'Johann P',
       mail: 'jp@mail.com',
@@ -93,16 +95,24 @@ tape('session', function (t) {
       passwordConfirm: 'foobarsecret'
     }
 
+    // create a second user
     makeRequest('POST', '/api/v1/user', user, function (body, res) {
       var newUser = user
       newUser.name = 'Peter Gabriel'
       newUser.mail = 'pg@mail.com'
       newUser.token = res.headers['x-session-token']
+      // modify it
       makeRequest('PUT', '/api/v1/user/' + body.id, newUser, { 'x-session-token': res.headers['x-session-token'] }, function (body, res) {
         assert.equal(res.statusCode, 200)
+        // check the modified data
         makeRequest('GET', '/api/v1/user/' + res.headers['x-session-token'], null, res.headers, function (body, res) {
           assert.equal(res.statusCode, 200)
           assert.equal(body.name, newUser.name)
+          // attempt to modify the first user
+          makeRequest('PUT', '/api/v1/user/' + id, newUser, { 'x-session-token': res.headers['x-session-token'] }, function (body, res) {
+            assert.equal(res.statusCode, 403)
+            assert.equal(body.message, 'Not allowed')
+          })
         })
       })
     })

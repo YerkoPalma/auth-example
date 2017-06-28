@@ -17,7 +17,7 @@ session management.
 - [x] Finish session middleware
 - [ ] Better handle errors
   - [ ] Handle password confirmation on server
-- [ ] Tests
+- [x] Tests
 
 ## License
 [MIT](/license)

@@ -104,7 +104,7 @@ function getCurrentUser (req, res, ctx) {
     .on('end', function () {
       if (user) {
         if (user.pass) delete user.pass
-        ctx.send(200, user)
+        ctx.send(200, user, { 'x-session-token': token })
       } else {
         ctx.send(400, { message: 'Not found' })
       }
