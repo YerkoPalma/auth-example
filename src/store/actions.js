@@ -4,6 +4,7 @@ var cookie = require('cookie-cutter')
 function getCurrentUser (token, store, cb) {
   makeRequest('GET', '/api/v1/user/' + token, null, function (err, body, res) {
     if (err) return cb(err)
+    if (res.statusCode !== 200) cb(new Error('Not found'))
     store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
     // no need to pass the user
     cb()
