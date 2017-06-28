@@ -1,6 +1,5 @@
 var merry = require('merry')
 var level = require('level')
-var dump = require('level-dump')
 var sub = require('level-sublevel')
 var search = require('level-search')
 var securePassword = require('secure-password')
@@ -22,8 +21,12 @@ var User = Model(db, 'user')
 stack.push(function timeElapsed (ctx, next) {
   // GET request need to be logged in
   if (ctx.req.method === 'GET') {
-    if (ctx.req.headers['x-session-token']) next()
-    else next({ code: 403, message: 'Not allowed' })
+    if (ctx.req.headers['x-session-token']) {
+      ctx.res.setHeader('x-session-token', ctx.req.headers['x-session-token'])
+      next()
+    } else {
+      next({ code: 403, message: 'Not allowed' })
+    }
   // PUT, DELETE need to be logged in and only for the logged user
   // POST get special treatment
   } else if (ctx.req.method === 'PUT' || ctx.req.method === 'DELETE') {
@@ -35,8 +38,12 @@ stack.push(function timeElapsed (ctx, next) {
         })
         .on('data', function (dbData) {
           var user = dbData.value
-          if (user.id === ctx.params.id) next()
-          else next({ code: 403, message: 'Not allowed' })
+          if (user.id === ctx.params.id) {
+            ctx.res.setHeader('x-session-token', token)
+            next()
+          } else {
+            next({ code: 403, message: 'Not allowed' })
+          }
         })
     } else {
       next({ code: 403, message: 'Not allowed' })
@@ -88,7 +95,7 @@ function getCurrentUser (req, res, ctx) {
   var user = null
   index.createSearchStream(['token', token])
     .on('data', function (dbData) {
-      user = dbData
+      user = dbData.value
     })
     .on('error', function (err) {
       if (user) ctx.send(500, err)
@@ -96,6 +103,7 @@ function getCurrentUser (req, res, ctx) {
     })
     .on('end', function () {
       if (user) {
+        if (user.pass) delete user.pass
         ctx.send(200, user)
       } else {
         ctx.send(400, { message: 'Not found' })
@@ -120,11 +128,13 @@ function signup (req, res, ctx) {
       var token = Buffer.from(user.mail).toString('base64')
       user.token = token
       user.id = User.model.generateId()
+      user.passwordConfirm && delete user.passwordConfirm
       // data is now ready, so
       // save it to the DB
       db.put(user.id, user, function (err) {
         if (err) throw err
         // then send the user
+        delete user.pass
         ctx.send(200, user, { 'x-session-token': user.token })
       })
     })
@@ -172,8 +182,6 @@ function signout (req, res, ctx) {
   var user = null
   User.getBodyData(req, function (err, data) {
     if (err) throw err
-    dump.allEntries(db)
-    console.log(data)
     index.createSearchStream(['token', data])
       .on('error', function (err) {
         throw err

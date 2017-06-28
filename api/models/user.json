@@ -18,6 +18,5 @@
       "type": "string"
     }
   },
-  "required": ["mail", "password"],
-  "additionalProperties": false
+  "required": ["mail"]
 }

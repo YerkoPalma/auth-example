@@ -14,8 +14,9 @@ session management.
 ## TODO
 
 - [x] Use sublevel for indexing and searchs with level-search
-- [ ] Finish session middleware
+- [x] Finish session middleware
 - [ ] Better handle errors
+  - [ ] Handle password confirmation on server
 - [ ] Tests
 
 ## License

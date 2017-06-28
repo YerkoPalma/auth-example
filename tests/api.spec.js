@@ -10,108 +10,133 @@ tape('setup', function (t) {
   t.end()
 })
 
-tape('/api/v1/post', function (t) {
-  t.test('POST', function (assert) {
-    assert.plan(3)
-    var post = { title: 'Foo bar', content: 'lorem ipsum' }
+tape('authentication', function (t) {
+  t.test('signup', function (assert) {
+    assert.plan(6)
+    var user = {
+      name: 'John Doe',
+      mail: 'jdoe@mail.com',
+      pass: 'foobarsecret',
+      passwordConfirm: 'foobarsecret'
+    }
 
-    makeRequest('POST', '/api/v1/post', post, function (body, res) {
+    makeRequest('POST', '/api/v1/user', user, function (body, res) {
       assert.equal(res.statusCode, 200)
-      assert.equal(post.title, body.data.title)
-      assert.equal(post.content, body.data.content)
+      assert.ok(res.headers['x-session-token'])
+      assert.ok(body.token)
+      assert.ok(body.id)
+      assert.notOk(body.pass)
+      assert.equal(body.token, res.headers['x-session-token'])
     })
   })
 
-  t.test('GET and middleware', function (assert) {
+  t.test('signin', function (assert) {
+    assert.plan(3)
+    var credentials = {
+      mail: 'jdoe@mail.com',
+      pass: 'foobarsecret'
+    }
+    makeRequest('POST', '/api/v1/login', credentials, function (body, res) {
+      assert.equal(res.statusCode, 200)
+      assert.ok(res.headers['x-session-token'])
+      assert.notOk(body.pass)
+    })
+  })
+
+  t.test('current user', function (assert) {
     assert.plan(2)
+    var credentials = {
+      mail: 'jdoe@mail.com',
+      pass: 'foobarsecret'
+    }
 
-    makeRequest('GET', '/api/v1/post', null, function (body, res) {
-      assert.equal(res.statusCode, 200)
-      assert.equal(res.headers['awesome-header'], 'Header set')
-    })
-  })
-
-  t.test('GET /:id', function (assert) {
-    assert.plan(3)
-    var post = { title: 'Foo bar wow', content: 'lorem ipsum' }
-
-    makeRequest('POST', '/api/v1/post', post, function (body, res) {
-      makeRequest('GET', '/api/v1/post/' + body.data.id, null, function (body, res) {
+    makeRequest('POST', '/api/v1/login', credentials, function (body, res) {
+      makeRequest('GET', '/api/v1/user/' + res.headers['x-session-token'], null, res.headers, function (body, res) {
         assert.equal(res.statusCode, 200)
-        assert.equal('Foo bar wow', body.title)
-        assert.equal('lorem ipsum', body.content)
+        assert.notOk(body.pass)
       })
     })
   })
 
-  t.test('PUT', function (assert) {
-    assert.plan(4)
-    var post = { title: 'Foo bar wow', content: 'lorem ipsum' }
+  t.test('signout', function (assert) {
+    assert.plan(2)
+    var credentials = {
+      mail: 'jdoe@mail.com',
+      pass: 'foobarsecret'
+    }
 
-    makeRequest('POST', '/api/v1/post', post, function (body, res) {
-      post.title = 'New Foo Title'
-      assert.equal('Foo bar wow', body.data.title)
-      makeRequest('PUT', '/api/v1/post/' + body.data.id, post, function (body, res) {
+    makeRequest('POST', '/api/v1/login', credentials, function (body, res) {
+      makeRequest('POST', '/api/v1/logout', res.headers['x-session-token'], function (body, res) {
         assert.equal(res.statusCode, 200)
-        assert.equal('New Foo Title', body.data.title)
-        assert.equal('lorem ipsum', body.data.content)
+        assert.equal('signed out', body.message)
       })
     })
   })
+})
 
-  t.test('DELETE', function (assert) {
+tape('session', function (t) {
+  t.test('no access to data if user is not logged in', function (assert) {
     assert.plan(3)
-    var post = { title: 'Foo bar wow', content: 'lorem ipsum' }
+    makeRequest('GET', '/api/v1/user', null, function (body, res) {
+      assert.equal(res.statusCode, 403)
+      assert.equal(body.message, 'Not allowed')
+      assert.notOk(body.pass)
+    })
+  })
 
-    makeRequest('POST', '/api/v1/post', post, function (body, res) {
-      assert.equal(res.statusCode, 200)
-      var id = body.data.id
-      makeRequest('DELETE', '/api/v1/post/' + id, null, function (body, res) {
+  t.test('user data can only be modifyied by itself', function (assert) {
+    assert.plan(3)
+    var user = {
+      name: 'Johann P',
+      mail: 'jp@mail.com',
+      pass: 'foobarsecret',
+      passwordConfirm: 'foobarsecret'
+    }
+
+    makeRequest('POST', '/api/v1/user', user, function (body, res) {
+      var newUser = user
+      newUser.name = 'Peter Gabriel'
+      newUser.mail = 'pg@mail.com'
+      newUser.token = res.headers['x-session-token']
+      makeRequest('PUT', '/api/v1/user/' + body.id, newUser, { 'x-session-token': res.headers['x-session-token'] }, function (body, res) {
         assert.equal(res.statusCode, 200)
-        makeRequest('GET', '/api/v1/post/' + id, null, function (body, res) {
-          assert.equal(res.statusCode, 404)
+        makeRequest('GET', '/api/v1/user/' + res.headers['x-session-token'], null, res.headers, function (body, res) {
+          assert.equal(res.statusCode, 200)
+          assert.equal(body.name, newUser.name)
         })
       })
     })
   })
-
-  t.test('overwrite', function (assert) {
-    assert.end()
-  })
-
-  t.test('middleware can cancel request', function (assert) {
-    makeRequest('GET', '/api/v1/post/fake', null, function (body, res) {
-      assert.equal(res.statusCode, 500)
-      assert.equal(body.message, 'What are you doing?')
-      t.end()
-    })
-  })
-
-  function makeRequest (method, route, data, cb) {
-    var req = http.request({ port: 8080, method: method, path: route, headers: {'Content-Type': 'application/json'} }, function (res) {
-      res.on('error', function (err) {
-        t.error(err)
-      })
-      var body = []
-      res.on('data', function (chunk) {
-        body.push(chunk)
-      })
-      res.on('end', function () {
-        var bodyString = body.toString()
-        cb(bodyString ? JSON.parse(bodyString) : '{}', res)
-      })
-    })
-    req.on('error', function (err) {
-      t.error(err)
-    })
-    if (data) {
-      req.write(JSON.stringify(data))
-    }
-    req.end()
-  }
 })
 
 tape('teardown', function (t) {
   server.close()
   t.end()
 })
+
+function makeRequest (method, route, data, headers, cb) {
+  if (typeof headers === 'function') {
+    cb = headers
+    headers = {}
+  }
+  var req = http.request({ port: 8080, method: method, path: route, headers: Object.assign(headers, {'Content-Type': 'application/json'}) }, function (res) {
+    res.on('error', function (err) {
+      throw err
+    })
+    var body = []
+    res.on('data', function (chunk) {
+      body.push(chunk)
+    })
+    res.on('end', function () {
+      var bodyString = body.toString()
+      cb(bodyString ? JSON.parse(bodyString) : '{}', res)
+    })
+  })
+  req.on('error', function (err) {
+    throw err
+  })
+  if (data) {
+    req.write(JSON.stringify(data))
+  }
+  req.end()
+}

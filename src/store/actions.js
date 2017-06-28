@@ -67,7 +67,7 @@ function makeRequest (method, route, data, cb) {
     res.on('data', function (chunk) {
       body.push(chunk)
     })
-    res.on('end', function () { 
+    res.on('end', function () {
       var bodyString = body.toString()
       cb(null, bodyString ? JSON.parse(bodyString) : '{}', res)
     })

@@ -8,7 +8,6 @@ function homeView (params, store) {
     if (cookie.get('token')) {
       getCurrentUser(cookie.get('token'), store, function (err) {
         if (err) {
-          console.error(err)
           window.RouterInstance.goToPath('/signin')
         }
       })
@@ -24,7 +23,7 @@ function homeView (params, store) {
     <a class="link pointer" onclick="${signout}" >sign out</a>
   </div>
 </article>`
-  function signout(e) {
+  function signout (e) {
     e.preventDefault()
     signOut(store, function (err) {
       if (err) throw err
