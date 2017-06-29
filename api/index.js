@@ -116,6 +116,14 @@ function signup (req, res, ctx) {
   var ok = true
   User.getBodyData(req, function (err, data) {
     if (err) throw err
+    if (data.pass.length < 6) {
+      ctx.send(400, { message: 'Password too short' })
+      return
+    }
+    if (data.pass !== data.passwordConfirm) {
+      ctx.send(400, { message: 'Password missmatch' })
+      return
+    }
     user = data
     index.createSearchStream(['mail', user.mail])
       .on('data', function (dbData) {
