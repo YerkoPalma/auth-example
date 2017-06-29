@@ -116,12 +116,20 @@ function signup (req, res, ctx) {
   var ok = true
   User.getBodyData(req, function (err, data) {
     if (err) throw err
+    if (!data.pass) {
+      ctx.send(400, { message: 'Password can\'t be blank' })
+      return
+    }
     if (data.pass.length < 6) {
       ctx.send(400, { message: 'Password too short' })
       return
     }
     if (data.pass !== data.passwordConfirm) {
       ctx.send(400, { message: 'Password missmatch' })
+      return
+    }
+    if (!data.mail) {
+      ctx.send(400, { message: 'Email can\'t be blank' })
       return
     }
     user = data
