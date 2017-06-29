@@ -5,7 +5,10 @@ var api = require('./api')
 var apiHandler = api.start()
 var assets = bankai('./src')
 var server = http.createServer(handler)
-server.listen(process.env.PORT || 8080)
+server.listen(process.env.PORT || 8080, process.env.IP || 'localhost', function () {
+  var address = server.address()
+  console.log('server running on ' + address.address + ':' + address.port)
+})
 
 function handler (req, res) {
   var url = req.url

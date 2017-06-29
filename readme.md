@@ -16,6 +16,11 @@ session management.
 - [x] Use sublevel for indexing and searchs with level-search
 - [x] Finish session middleware
 - [ ] Better handle errors
+  - [ ] Email must be unique
+  - [ ] Password longer than 6 characters
+  - [ ] 403 errors
+  - [ ] 404 errors
+  - [ ] 500 errors
   - [ ] Handle password confirmation on server
 - [x] Tests
 
