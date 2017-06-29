@@ -113,31 +113,41 @@ function getCurrentUser (req, res, ctx) {
 
 function signup (req, res, ctx) {
   var user = null
+  var ok = true
   User.getBodyData(req, function (err, data) {
     if (err) throw err
     user = data
-    // user data already has name, mail and passwrod,
-    // so check that the email doesn't exists previously
-    // the password isn't encrypted, so encryp it with secure-password
-    var userPassword = Buffer.from(data.pass)
-    pwd.hash(userPassword, function (err, hash) {
-      if (err) throw err
-      user.pass = hash
-      // and add a token for session,
-      // generate a token from the email
-      var token = Buffer.from(user.mail).toString('base64')
-      user.token = token
-      user.id = User.model.generateId()
-      user.passwordConfirm && delete user.passwordConfirm
-      // data is now ready, so
-      // save it to the DB
-      db.put(user.id, user, function (err) {
-        if (err) throw err
-        // then send the user
-        delete user.pass
-        ctx.send(200, user, { 'x-session-token': user.token })
+    index.createSearchStream(['mail', user.mail])
+      .on('data', function (dbData) {
+        ok = false
+        ctx.send(400, { message: 'Email \'' + user.mail + '\' already in use' })
       })
-    })
+      .on('end', function () {
+        if (ok) {
+          // user data already has name, mail and passwrod,
+          // so check that the email doesn't exists previously
+          // the password isn't encrypted, so encryp it with secure-password
+          var userPassword = Buffer.from(data.pass)
+          pwd.hash(userPassword, function (err, hash) {
+            if (err) throw err
+            user.pass = hash
+            // and add a token for session,
+            // generate a token from the email
+            var token = Buffer.from(user.mail).toString('base64')
+            user.token = token
+            user.id = User.model.generateId()
+            user.passwordConfirm && delete user.passwordConfirm
+            // data is now ready, so
+            // save it to the DB
+            db.put(user.id, user, function (err) {
+              if (err) throw err
+              // then send the user
+              delete user.pass
+              ctx.send(200, user, { 'x-session-token': user.token })
+            })
+          })
+        }
+      })
   })
 }
 
