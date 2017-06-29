@@ -119,6 +119,83 @@ tape('session', function (t) {
   })
 })
 
+tape('validations', function (t) {
+  t.test('mail must be unique', function (assert) {
+    assert.plan(2)
+    var user = {
+      name: 'Uniqua',
+      mail: 'uniqua@mail.com',
+      pass: 'foobarsecret',
+      passwordConfirm: 'foobarsecret'
+    }
+
+    makeRequest('POST', '/api/v1/user', user, function (body, res) {
+      // save it the first time
+      makeRequest('POST', '/api/v1/user', user, function (body, res) {
+        assert.equal(res.statusCode, 400)
+        assert.equal(body.message, 'Email \'uniqua@mail.com\' already in use')
+      })
+    })
+  })
+  t.test('password longer than 6', function (assert) {
+    assert.plan(2)
+    var user = {
+      name: 'short pass',
+      mail: 'spass@mail.com',
+      pass: '1234',
+      passwordConfirm: '1234'
+    }
+
+    makeRequest('POST', '/api/v1/user', user, function (body, res) {
+      // save it the first time
+      assert.equal(res.statusCode, 400)
+      assert.equal(body.message, 'Password too short')
+    })
+  })
+  t.test('password and confirmation must be equal', function (assert) {
+    assert.plan(2)
+    var user = {
+      name: 'Bad pass',
+      mail: 'bpass@mail.com',
+      pass: 'foobarsecret',
+      passwordConfirm: 'foosecret'
+    }
+
+    makeRequest('POST', '/api/v1/user', user, function (body, res) {
+      // save it the first time
+      assert.equal(res.statusCode, 400)
+      assert.equal(body.message, 'Password missmatch')
+    })
+  })
+  t.test('mail and password can\'t be empty', function (assert) {
+    assert.plan(4)
+    var user = {
+      name: 'Bad pass',
+      mail: 'bpass@mail.com',
+      pass: '',
+      passwordConfirm: ''
+    }
+
+    makeRequest('POST', '/api/v1/user', user, function (body, res) {
+      // save it the first time
+      assert.equal(res.statusCode, 400)
+      assert.equal(body.message, 'Password can\'t be blank')
+      var user2 = {
+        name: 'Bad pass',
+        mail: '',
+        pass: 'foobar',
+        passwordConfirm: 'foobar'
+      }
+
+      makeRequest('POST', '/api/v1/user', user2, function (body, res) {
+        // save it the first time
+        assert.equal(res.statusCode, 400)
+        assert.equal(body.message, 'Email can\'t be blank')
+      })
+    })
+  })
+})
+
 tape('teardown', function (t) {
   server.close()
   t.end()

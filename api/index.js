@@ -18,7 +18,7 @@ var index = search(db, 'search')
 var User = Model(db, 'user')
 
 // push to middleware
-stack.push(function timeElapsed (ctx, next) {
+stack.push(function session (ctx, next) {
   // GET request need to be logged in
   if (ctx.req.method === 'GET') {
     if (ctx.req.headers['x-session-token']) {
@@ -116,14 +116,14 @@ function signup (req, res, ctx) {
   User.getBodyData(req, function (err, data) {
     if (err) throw err
     user = data
-    // user data already has name, mail and passwrod, but
+    // user data already has name, mail and passwrod,
+    // so check that the email doesn't exists previously
     // the password isn't encrypted, so encryp it with secure-password
-    // and add a token for session
-
     var userPassword = Buffer.from(data.pass)
     pwd.hash(userPassword, function (err, hash) {
       if (err) throw err
       user.pass = hash
+      // and add a token for session,
       // generate a token from the email
       var token = Buffer.from(user.mail).toString('base64')
       user.token = token
