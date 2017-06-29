@@ -1,8 +1,11 @@
 var html = require('bel')
 var signUp = require('../store/actions').signUp
+var setError = require('../store/actions').setError
+var errorElement = require('./_error')
 
 function signupView (params, store) {
   return html`<main class="helvetica pa4 black-80">
+  ${store.getState().error ? errorElement(store.getState().error) : ''}
   <form class="measure center" onsubmit="${signup}">
     <fieldset id="sign_up" class="ba b--transparent ph0 mh0">
       <legend class="f4 fw6 ph0 mh0">Sign Up</legend>
@@ -40,7 +43,10 @@ function signupView (params, store) {
     var repeatedPassword = document.querySelector('#repeatedpassword').value
 
     signUp(name, mail, password, repeatedPassword, store, function (err) {
-      if (err) throw err
+      if (err) {
+        setError(err.message || 'Unknown error', store)
+        return
+      }
       window.RouterInstance.goToPath('/')
     })
   }

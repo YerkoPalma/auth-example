@@ -1,10 +1,13 @@
 var http = require('http')
 var cookie = require('cookie-cutter')
 
+function setError (errorText, store) {
+  store.dispatch({ type: 'ERROR', data: errorText })
+}
 function getCurrentUser (token, store, cb) {
   makeRequest('GET', '/api/v1/user/' + token, null, function (err, body, res) {
     if (err) return cb(err)
-    if (res.statusCode !== 200) cb(new Error('Not found'))
+    if (res.statusCode !== 200) return cb(new Error('Not found'))
     store.dispatch({ type: 'SET_CURRENT_USER', data: body.data })
     // no need to pass the user
     cb()
@@ -17,6 +20,7 @@ function signIn (mail, pass, store, cb) {
   }
   makeRequest('POST', '/api/v1/login', userData, function (err, body, res) {
     if (err) return cb(err)
+    if (res.statusCode !== 200) return cb(new Error(body.message))
     store.dispatch({ type: 'SET_CURRENT_USER', data: body })
     cb()
   })
@@ -30,6 +34,7 @@ function signUp (name, mail, pass, passConfirm, store, cb) {
   }
   makeRequest('POST', '/api/v1/user', userData, function (err, body, res) {
     if (err) return cb(err)
+    if (res.statusCode !== 200) return cb(new Error(body.message))
     store.dispatch({ type: 'SET_CURRENT_USER', data: body })
     cb()
   })
@@ -38,6 +43,7 @@ function signOut (store, cb) {
   var token = store.getState().currentUser.token
   makeRequest('POST', '/api/v1/logout', token, function (err, body, res) {
     if (err) return cb(err)
+    if (res.statusCode !== 200) return cb(new Error(body.message))
     store.dispatch({ type: 'DELETE_CURRENT_USER' })
     cb()
   })
@@ -47,7 +53,8 @@ module.exports = {
   getCurrentUser: getCurrentUser,
   signIn: signIn,
   signUp: signUp,
-  signOut: signOut
+  signOut: signOut,
+  setError: setError
 }
 
 function makeRequest (method, route, data, cb) {

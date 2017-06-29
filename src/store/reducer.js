@@ -1,6 +1,9 @@
 function reducer (state, action) {
   state = state || {}
   switch (action.type) {
+    case 'ERROR':
+      state.error = action.data
+      return state
     case 'SET_CURRENT_USER':
       state.currentUser = action.data
       return state

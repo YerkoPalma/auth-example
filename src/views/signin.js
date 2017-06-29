@@ -1,8 +1,11 @@
 var html = require('bel')
 var signIn = require('../store/actions').signIn
+var setError = require('../store/actions').setError
+var errorElement = require('./_error')
 
 function signinView (params, store) {
   return html`<main class="helvetica pa4 black-80">
+  ${store.getState().error ? errorElement(store.getState().error) : ''}
   <form class="measure center" onsubmit="${signin}">
     <fieldset id="sign_up" class="ba b--transparent ph0 mh0">
       <legend class="f4 fw6 ph0 mh0">Sign In</legend>
@@ -31,7 +34,10 @@ function signinView (params, store) {
     var password = document.querySelector('#password').value
 
     signIn(mail, password, store, function (err) {
-      if (err) throw err
+      if (err) {
+        setError(err.message || 'Unknown error', store)
+        return
+      }
       window.RouterInstance.goToPath('/')
     })
   }
