@@ -1,8 +1,13 @@
 var http = require('http')
 var cookie = require('cookie-cutter')
 
-function setError (errorText, store) {
-  store.dispatch({ type: 'ERROR', data: errorText })
+function setError (errorText, type, store) {
+  if (!store) {
+    store = type
+    type = ''
+  }
+  var errorType = type ? '_' + type.toUpperCase() : ''
+  store.dispatch({ type: 'ERROR' + errorType, data: errorText })
 }
 function getCurrentUser (token, store, cb) {
   makeRequest('GET', '/api/v1/user/' + token, null, function (err, body, res) {
@@ -30,7 +35,8 @@ function signUp (name, mail, pass, passConfirm, store, cb) {
   var userData = {
     name: name,
     mail: mail,
-    pass: pass
+    pass: pass,
+    passwordConfirm: passConfirm
   }
   makeRequest('POST', '/api/v1/user', userData, function (err, body, res) {
     if (err) return cb(err)

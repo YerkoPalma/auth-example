@@ -15,13 +15,13 @@ session management.
 
 - [x] Use sublevel for indexing and searchs with level-search
 - [x] Finish session middleware
-- [ ] Better handle errors
-  - [ ] Email must be unique
-  - [ ] Password longer than 6 characters
-  - [ ] 403 errors
-  - [ ] 404 errors
-  - [ ] 500 errors
-  - [ ] Handle password confirmation on server
+- [x] Better handle errors
+  - [x] Email must be unique
+  - [x] Password longer than 6 characters
+  - [x] 403 errors
+  - [x] 404 errors
+  - [x] 500 errors
+  - [x] Handle password confirmation on server
 - [x] Tests
 
 ## License

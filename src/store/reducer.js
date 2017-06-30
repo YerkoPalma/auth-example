@@ -4,6 +4,12 @@ function reducer (state, action) {
     case 'ERROR':
       state.error = action.data
       return state
+    case 'ERROR_SIGNIN':
+      state.errorSignin = action.data
+      return state
+    case 'ERROR_SIGNUP':
+      state.errorSignup = action.data
+      return state
     case 'SET_CURRENT_USER':
       state.currentUser = action.data
       return state

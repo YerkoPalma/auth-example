@@ -171,10 +171,23 @@ function signin (req, res, ctx) {
   var user = null
   User.getBodyData(req, function (err, data) {
     if (err) throw err
+    if (!data.pass) {
+      ctx.send(400, { message: 'Password can\'t be blank' })
+      return
+    }
+    if (!data.mail) {
+      ctx.send(400, { message: 'Email can\'t be blank' })
+      return
+    }
     // get a buffer from the password
     var passBuffer = Buffer.from(data.pass)
     // find the user fomr the Db with the given mail
     index.createSearchStream(['mail', data.mail])
+      .on('end', function () {
+        if (!user) {
+          ctx.send(400, { message: 'Not found' })
+        }
+      })
       .on('data', function (dbData) {
         user = dbData.value
         user.token = User.model.generateId()

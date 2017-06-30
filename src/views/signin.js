@@ -5,7 +5,7 @@ var errorElement = require('./_error')
 
 function signinView (params, store) {
   return html`<main class="helvetica pa4 black-80">
-  ${store.getState().error ? errorElement(store.getState().error) : ''}
+  ${store.getState().errorSignin ? errorElement(store.getState().errorSignin) : ''}
   <form class="measure center" onsubmit="${signin}">
     <fieldset id="sign_up" class="ba b--transparent ph0 mh0">
       <legend class="f4 fw6 ph0 mh0">Sign In</legend>
@@ -35,9 +35,10 @@ function signinView (params, store) {
 
     signIn(mail, password, store, function (err) {
       if (err) {
-        setError(err.message || 'Unknown error', store)
+        setError(err.message || 'Unknown error', 'signin', store)
         return
       }
+      if (store.getState().errorSignin) setError(null, 'signin', store)
       window.RouterInstance.goToPath('/')
     })
   }

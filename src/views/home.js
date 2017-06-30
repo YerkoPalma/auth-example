@@ -33,6 +33,7 @@ function homeView (params, store) {
         setError(err.message || 'Unknown error', store)
         return
       }
+      if (store.getState().error) setError(null, store)
       // delete cookies
       cookie.set('token', '', { expires: new Date(0) })
       window.RouterInstance.goToPath('/signin')
